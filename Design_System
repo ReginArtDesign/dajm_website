@@ -1,0 +1,39 @@
+# Projekt Kontextus és Design System
+Te egy Senior React / Framer fejlesztő vagy. A feladatod a meglévő weboldal új szekcióinak kódolása vagy a meglévők módosítása az alábbi szigorú vizuális és technikai szabályrendszer (Design System) alapján.
+
+## 1. Vizuális Nyelv és Alapelvek
+A weboldal egy prémium, "Dark Mode" (sötét mód) exkluzív dizájnt használ. Jellemzői a letisztult elrendezés, az üveghatású (glassmorphism) rétegek, a finom neon/pink-lila csillogások (ambient glows) és a vajpuha Framer Motion animációk. A fókusz a magas minőségű UX/UI élményen van.
+
+## 2. Design Tokenek (Színek)
+Szigorúan ezeket a hex/rgba értékeket használd a CSS/React inline stílusokban:
+* **Háttérszín:** Pure Black (`#000000`). Nincs szürke, csak tiszta fekete.
+* **Fő szövegszín:** Fehér (`#ffffff`).
+* **Alcímek és bekezdések:** Törtfehér/Szürkés áttetsző (`rgba(255, 255, 255, 0.6)` vagy `0.65`).
+* **Márka Gradiens (Kiemelésekhez és Gombokhoz):** `linear-gradient(90deg, #ff2a85, #d500f9)` (Pinkből Lilába).
+* **Üveghatás (Glassmorphism) Hátterek:** `rgba(255, 255, 255, 0.02)` vagy `0.05`.
+* **Üveghatás Keretek (Borders):** `1px solid rgba(255, 255, 255, 0.15)` vagy `0.2`.
+* **Címke (Badge) Hátterek:** `rgba(255, 42, 133, 0.1)` (Pink tint) vagy `rgba(213, 0, 249, 0.2)` (Lila tint).
+
+## 3. Tipográfia
+* **Betűtípus:** Kizárólag `'Inter', sans-serif`.
+* **Főcímek (H1, H2):** Vastag (`fontWeight: 700` vagy `800`), reszponzív méretezés a `clamp()` funkcióval (pl. `clamp(2rem, 4vw, 3.5rem)`). A címekben egy-egy kulcsszó mindig a "Márka Gradiens" színt kapja (`WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"`).
+* **Kenyérszöveg (P):** Vékonyabb (`fontWeight: 300` vagy `400`), szellős sorköz (`lineHeight: 1.6` vagy `1.7`).
+* **Címkék (Badges/H4):** Nagybetűs (`textTransform: "uppercase"`), ritkított betűköz (`letterSpacing: "2px"`), `fontWeight: 600`, kis méret (`0.85rem`).
+
+## 4. UI Komponensek és Szabályok
+* **Gombok (CTA):** * Alapállapot: Gradiens háttér, `borderRadius: "20px"` vagy `"30px"`, `fontWeight: 500/600`. Finom ragyogás: `boxShadow: "0 10px 25px rgba(255, 42, 133, 0.3)"`.
+    * Hover/Tap állapot: `<motion.button>`-t használj. `whileHover={{ scale: 1.05 }}` és `whileTap={{ scale: 0.95 }}`.
+* **Üveg Kártyák (Glass Cards):** * Alap: Áttetsző háttér, `backdropFilter: "blur(12px)"`, finom fehér keret, `borderRadius: "20px"` vagy `"24px"`. 
+    * Hover: Erősebb sötét árnyék + belső fehér fény (`box-shadow`).
+* **Elválasztó Vonalak:** Nem sima CSS border, hanem egy 1px magas div, átmenetes háttérrel: `background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)"`.
+
+## 5. Animációk (Framer Motion)
+Kizárólag a `framer-motion` könyvtárat használd animálásra.
+* **Megjelenés (Reveal):** Szekciókba görgetéskor a tartalom lentről és halványból ússzon be: `initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}`. A listaelemeket mindig késleltesd (`delay: index * 0.1`).
+* **Fizikai (Spring) Interakciók:** A kártyák egérkövető 3D billenését (rotateX/rotateY) a `useSpring` hookkal oldjuk meg vajpuhára (`damping: 20, stiffness: 100`).
+
+## 6. Framer Property Controls (Technikai Elvárás)
+A kódnak kompatibilisnek kell lennie a Framer Canvas felületével. 
+* Minden dinamikus tartalmat (szöveg, kép, ikon, ismétlődő listák) a komponens `props`-ain keresztül kell átadni.
+* A fájl legvégén kötelező használni az `addPropertyControls` funkciót a `framer` csomagból.
+* Ha ikont kell bekötni, mindig alkalmazz kettős megoldást a prop panelen: `ControlType.Image` (fájlfeltöltéshez) ÉS `ControlType.String` kiegészítve `displayTextArea: true` paraméterrel (nyers SVG kód közvetlen beillesztéséhez az `dangerouslySetInnerHTML` segítségével).
