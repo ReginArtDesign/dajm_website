@@ -1,0 +1,631 @@
+import * as React from "react"
+import { useState, useEffect, useRef } from "react"
+import {
+    motion,
+    useMotionValue,
+    useSpring,
+    useTransform,
+    AnimatePresence,
+    PanInfo,
+} from "framer-motion"
+import { addPropertyControls, ControlType } from "framer"
+
+interface PatternTiltCardProps {
+    title: string
+    category: string
+    shortDescription: string
+    expandedContent: string
+    badgeText: string
+    borderRadius: number
+    patternImage: string
+    accentColor: string
+    titleFontFamily: string
+    categoryFontFamily: string
+    badgeFontFamily: string
+    shortDescFontFamily: string
+    expandedDescFontFamily: string
+    uiFontFamily: string
+}
+
+export default function PatternTiltCard({
+    title = "UI/UX & Branding",
+    category = "PRECISION & PUNK",
+    shortDescription = "Emberközpontú és akadálymentes design, mikroszintű pontossággal és egy csipetnyi lázadással.",
+    expandedContent = "Komponensalapú Design Systemek, design tokenek, WCAG AA megfelelőség és 60+ FPS-re optimalizált interakciók tervezése Figma-ban és Framerben.",
+    badgeText = "SZENIOR",
+    borderRadius = 24,
+    patternImage = "",
+    accentColor = "#FF2A85",
+    titleFontFamily = "'Montserrat', sans-serif",
+    categoryFontFamily = "'Space Grotesk', sans-serif",
+    badgeFontFamily = "'Inter', sans-serif",
+    shortDescFontFamily = "'Inter', sans-serif",
+    expandedDescFontFamily = "'Inter', sans-serif",
+    uiFontFamily = "'Inter', sans-serif",
+}: PatternTiltCardProps) {
+    const [isExpanded, setIsExpanded] = useState(false)
+    const [isHovered, setIsHovered] = useState(false)
+    const [isTouchActive, setIsTouchActive] = useState(false)
+    const [isMobile, setIsMobile] = useState(false)
+    const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (typeof window !== "undefined")
+                setIsMobile(window.innerWidth < 768)
+        }
+        handleResize()
+        window.addEventListener("resize", handleResize)
+        return () => window.removeEventListener("resize", handleResize)
+    }, [])
+
+    const mouseX = useMotionValue(0)
+    const mouseY = useMotionValue(0)
+
+    const springConfig = { stiffness: 65, damping: 18, mass: 0.6 }
+    const rotateX = useSpring(
+        useTransform(mouseY, [-0.5, 0.5], [10, -10]),
+        springConfig
+    )
+    const rotateY = useSpring(
+        useTransform(mouseX, [-0.5, 0.5], [-10, 10]),
+        springConfig
+    )
+
+    const sheenX = useSpring(
+        useTransform(mouseX, [-0.5, 0.5], ["-80%", "80%"]),
+        springConfig
+    )
+    const sheenY = useSpring(
+        useTransform(mouseY, [-0.5, 0.5], ["-30%", "30%"]),
+        springConfig
+    )
+
+    const isPatternActive = isHovered || isTouchActive
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isMobile) return
+        if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current)
+
+        const rect = e.currentTarget.getBoundingClientRect()
+        mouseX.set((e.clientX - rect.left) / rect.width - 0.5)
+        mouseY.set((e.clientY - rect.top) / rect.height - 0.5)
+    }
+
+    const handleMouseEnter = () => {
+        if (isMobile) return
+        if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current)
+        setIsHovered(true)
+    }
+
+    const handleMouseLeave = () => {
+        if (isMobile) return
+        leaveTimeoutRef.current = setTimeout(() => {
+            setIsHovered(false)
+            mouseX.set(0)
+            mouseY.set(0)
+        }, 350)
+    }
+
+    const handleDragStart = () => {
+        setIsTouchActive(true)
+    }
+
+    const handleDragEnd = (
+        _event: MouseEvent | TouchEvent | PointerEvent,
+        info: PanInfo
+    ) => {
+        setIsTouchActive(false)
+        const threshold = 15
+        const velocityThreshold = 180
+
+        if (info.offset.y > threshold || info.velocity.y > velocityThreshold) {
+            setIsExpanded(true)
+        } else if (
+            info.offset.y < -threshold ||
+            info.velocity.y < -velocityThreshold
+        ) {
+            setIsExpanded(false)
+        }
+    }
+
+    return (
+        <div style={styles.container}>
+            <motion.div
+                style={{
+                    ...styles.tiltWrapper,
+                    rotateX: isMobile ? 0 : rotateX,
+                    rotateY: isMobile ? 0 : rotateY,
+                    borderRadius: `${borderRadius}px`,
+                    transformStyle: "preserve-3d",
+                    zIndex: isHovered || isExpanded || isTouchActive ? 50 : 1,
+                }}
+                onMouseMove={handleMouseMove}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            >
+                {/* --- HÁTSÓ LEOPÁRD MINTA KERET --- */}
+                <motion.div
+                    animate={{
+                        opacity: isPatternActive ? 1 : 0,
+                        scaleX: isPatternActive
+                            ? isMobile
+                                ? 1.08
+                                : 1.07
+                            : 0.94,
+                        scaleY: isPatternActive
+                            ? isMobile
+                                ? 1.06
+                                : 1.06
+                            : 0.94,
+                        rotateZ: isPatternActive ? 1.5 : 0,
+                    }}
+                    transition={{
+                        type: "spring",
+                        stiffness: 350,
+                        damping: 25,
+                    }}
+                    style={{
+                        ...styles.patternBacking,
+                        borderRadius: `${borderRadius + 4}px`,
+                        backgroundImage: patternImage
+                            ? `url(${patternImage})`
+                            : "linear-gradient(135deg, #FF2A85 0%, #00F2FE 50%, #7928CA 100%)",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        transform: "translateZ(-14px)",
+                        boxShadow: isPatternActive
+                            ? "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
+                            : "none",
+                    }}
+                    aria-hidden="true"
+                />
+
+                {/* --- ELÜLSŐ ÜVEG KÁRTYA --- */}
+                <div
+                    style={{
+                        ...styles.glassCard,
+                        borderRadius: `${borderRadius}px`,
+                        transform: "translateZ(0px)",
+                    }}
+                >
+                    {!isMobile && (
+                        <motion.div
+                            style={{
+                                ...styles.sheen,
+                                x: sheenX,
+                                y: sheenY,
+                            }}
+                            aria-hidden="true"
+                        />
+                    )}
+
+                    <div style={styles.contentContainer}>
+                        <div style={styles.header}>
+                            <div style={styles.categoryBadge}>
+                                <span
+                                    style={{
+                                        ...styles.categoryText,
+                                        fontFamily: categoryFontFamily,
+                                    }}
+                                >
+                                    {category}
+                                </span>
+                            </div>
+                            <span
+                                style={{
+                                    ...styles.badgeText,
+                                    fontFamily: badgeFontFamily,
+                                }}
+                            >
+                                {badgeText}
+                            </span>
+                        </div>
+
+                        <h3
+                            style={{
+                                ...styles.title,
+                                fontFamily: titleFontFamily,
+                            }}
+                        >
+                            {title}
+                        </h3>
+                        <p
+                            style={{
+                                ...styles.shortDescription,
+                                fontFamily: shortDescFontFamily,
+                            }}
+                        >
+                            {shortDescription}
+                        </p>
+
+                        {/* DESKTOP TOGGLE GOMB (KÉZZEL RAJZOLT NYÍLLAL) */}
+                        {!isMobile && (
+                            <div style={styles.desktopToggleWrapper}>
+                                <motion.button
+                                    onClick={() => setIsExpanded(!isExpanded)}
+                                    style={{
+                                        ...styles.desktopToggleButton,
+                                        fontFamily: uiFontFamily,
+                                    }}
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    aria-expanded={isExpanded}
+                                >
+                                    <span style={styles.toggleText}>
+                                        {isExpanded
+                                            ? "Kevesebb infó"
+                                            : "További infó"}
+                                    </span>
+
+                                    {/* KÉZZEL RAJZOLT SVG NYÍL ANIMÁCIÓ */}
+                                    <motion.div
+                                        style={styles.arrowIconWrapper}
+                                        animate={{
+                                            rotate: isExpanded ? -180 : 0,
+                                        }}
+                                        transition={{
+                                            type: "spring",
+                                            stiffness: 200,
+                                            damping: 18,
+                                        }}
+                                    >
+                                        <svg
+                                            width="18"
+                                            height="18"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            {/* Kézzel rajzolt, enyhén hullámos szár és egyenetlen nyílhegy */}
+                                            <path
+                                                d="M11.5 3.5 C11.2 8, 12.3 13, 11.8 20.5 M6 14.5 C8.2 16.5, 10.1 18.8, 11.8 20.5 C13.2 18.5, 15.1 16.2, 17.8 14.2"
+                                                stroke={accentColor}
+                                                strokeWidth="2.5"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        </svg>
+                                    </motion.div>
+                                </motion.button>
+                            </div>
+                        )}
+
+                        {/* LENYÍLÓ TARTALOM */}
+                        <AnimatePresence initial={false}>
+                            {isExpanded && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{
+                                        duration: 0.35,
+                                        ease: [0.16, 1, 0.3, 1],
+                                    }}
+                                    style={styles.expandedWrapper}
+                                >
+                                    <div style={styles.expandedInner}>
+                                        <div
+                                            style={{
+                                                ...styles.divider,
+                                                background: `linear-gradient(90deg, ${accentColor}80 0%, rgba(17,17,17,0.1) 100%)`,
+                                            }}
+                                        />
+                                        <p
+                                            style={{
+                                                ...styles.expandedText,
+                                                fontFamily:
+                                                    expandedDescFontFamily,
+                                            }}
+                                        >
+                                            {expandedContent}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* MOBIL DRAG HANDLE */}
+                        {isMobile && (
+                            <motion.div
+                                style={styles.mobileHandleContainer}
+                                drag="y"
+                                dragConstraints={{ top: -8, bottom: 8 }}
+                                dragElastic={0.06}
+                                onDragStart={handleDragStart}
+                                onDragEnd={handleDragEnd}
+                                whileTap={{ scale: 0.96 }}
+                            >
+                                <div
+                                    style={styles.mobileHandleBar}
+                                    aria-hidden="true"
+                                />
+                                <span
+                                    style={{
+                                        ...styles.mobileHandleLabel,
+                                        fontFamily: uiFontFamily,
+                                    }}
+                                >
+                                    {isExpanded
+                                        ? "Húzd fel a bezáráshoz ↑"
+                                        : "Húzd le a részletekért ↓"}
+                                </span>
+                            </motion.div>
+                        )}
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    )
+}
+
+const fontOptions = [
+    "'Montserrat', sans-serif",
+    "'Inter', sans-serif",
+    "'Space Grotesk', sans-serif",
+    "'Syne', sans-serif",
+    "'Fira Code', monospace",
+    "'Playfair Display', serif",
+    "'Indie Flower', cursive",
+    "system-ui, -apple-system, sans-serif",
+]
+
+const fontOptionTitles = [
+    "Montserrat (Punk / Geometrikus)",
+    "Inter (Svájci / Modern Groteszk)",
+    "Space Grotesk (Brutal / Tech)",
+    "Syne (Expresszív / Art)",
+    "Fira Code (Fejlesztői Monospace)",
+    "Playfair Display (Elegáns Serif)",
+    "Indie Flower (Kézírásos / Kreatív)",
+    "System UI (Rendszer Alapértelmezett)",
+]
+
+addPropertyControls(PatternTiltCard, {
+    title: {
+        type: ControlType.String,
+        title: "Cím",
+        defaultValue: "UI/UX & Branding",
+    },
+    category: {
+        type: ControlType.String,
+        title: "Kategória",
+        defaultValue: "PRECISION & PUNK",
+    },
+    shortDescription: {
+        type: ControlType.String,
+        title: "Rövid leírás",
+        defaultValue:
+            "Emberközpontú és akadálymentes design, mikroszintű pontossággal és egy csipetnyi lázadással.",
+    },
+    expandedContent: {
+        type: ControlType.String,
+        title: "Lenyíló leírás",
+        defaultValue:
+            "Komponensalapú Design Systemek, design tokenek, WCAG AA megfelelőség és 60+ FPS-re optimalizált interakciók tervezése Figma-ban és Framerben.",
+    },
+    badgeText: {
+        type: ControlType.String,
+        title: "Címke",
+        defaultValue: "SZENIOR",
+    },
+    borderRadius: {
+        type: ControlType.Number,
+        title: "Lekerekítés (px)",
+        defaultValue: 24,
+        min: 0,
+        max: 64,
+    },
+    patternImage: {
+        type: ControlType.Image,
+        title: "Háttér Minta (Leopárd)",
+    },
+    accentColor: {
+        type: ControlType.Color,
+        title: "Akcentus Szín",
+        defaultValue: "#FF2A85",
+    },
+    titleFontFamily: {
+        type: ControlType.Enum,
+        title: "Cím Font",
+        options: fontOptions,
+        optionTitles: fontOptionTitles,
+        defaultValue: "'Montserrat', sans-serif",
+    },
+    categoryFontFamily: {
+        type: ControlType.Enum,
+        title: "Kategória Font",
+        options: fontOptions,
+        optionTitles: fontOptionTitles,
+        defaultValue: "'Space Grotesk', sans-serif",
+    },
+    badgeFontFamily: {
+        type: ControlType.Enum,
+        title: "Címke Font",
+        options: fontOptions,
+        optionTitles: fontOptionTitles,
+        defaultValue: "'Inter', sans-serif",
+    },
+    shortDescFontFamily: {
+        type: ControlType.Enum,
+        title: "Rövid Leírás Font",
+        options: fontOptions,
+        optionTitles: fontOptionTitles,
+        defaultValue: "'Inter', sans-serif",
+    },
+    expandedDescFontFamily: {
+        type: ControlType.Enum,
+        title: "Lenyíló Leírás Font",
+        options: fontOptions,
+        optionTitles: fontOptionTitles,
+        defaultValue: "'Inter', sans-serif",
+    },
+    uiFontFamily: {
+        type: ControlType.Enum,
+        title: "Gombok & UI Font",
+        options: fontOptions,
+        optionTitles: fontOptionTitles,
+        defaultValue: "'Inter', sans-serif",
+    },
+})
+
+const styles: { [key: string]: React.CSSProperties } = {
+    container: {
+        width: "100%",
+        maxWidth: "440px",
+        perspective: "1200px",
+        fontFamily: "'Inter', sans-serif",
+    },
+    tiltWrapper: {
+        position: "relative",
+        width: "100%",
+        cursor: "pointer",
+        overflow: "visible",
+    },
+    patternBacking: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        pointerEvents: "none",
+        zIndex: 0,
+    },
+    glassCard: {
+        position: "relative",
+        width: "100%",
+        padding: "28px",
+        backgroundColor: "rgba(255, 255, 255, 0.78)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid rgba(255, 255, 255, 0.7)",
+        boxShadow:
+            "0 20px 40px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.4)",
+        boxSizing: "border-box",
+        overflow: "hidden",
+        zIndex: 1,
+    },
+    sheen: {
+        position: "absolute",
+        top: "-50%",
+        left: "-50%",
+        width: "200%",
+        height: "200%",
+        background:
+            "linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.4) 48%, rgba(255, 255, 255, 0.15) 52%, transparent 65%)",
+        pointerEvents: "none",
+        zIndex: 1,
+        mixBlendMode: "overlay",
+    },
+    contentContainer: {
+        position: "relative",
+        zIndex: 2,
+    },
+    header: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: "16px",
+    },
+    categoryBadge: {
+        padding: "6px 14px",
+        borderRadius: "999px",
+        background: "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)",
+    },
+    categoryText: {
+        color: "#ffffff",
+        fontSize: "11px",
+        fontWeight: 800,
+        letterSpacing: "1px",
+        textTransform: "uppercase",
+    },
+    badgeText: {
+        color: "#111111",
+        fontSize: "12px",
+        fontWeight: 700,
+        opacity: 0.6,
+    },
+    title: {
+        color: "#111111",
+        fontSize: "22px",
+        fontWeight: 800,
+        letterSpacing: "-0.5px",
+        margin: "0 0 10px 0",
+    },
+    shortDescription: {
+        color: "rgba(17, 17, 17, 0.75)",
+        fontSize: "15px",
+        lineHeight: "1.5",
+        margin: 0,
+    },
+    desktopToggleWrapper: {
+        display: "flex",
+        justifyContent: "flex-end",
+        marginTop: "20px",
+    },
+    desktopToggleButton: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "8px",
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: "6px 12px",
+        color: "#111111",
+        fontWeight: 700,
+        fontSize: "13px",
+    },
+    toggleText: { letterSpacing: "0.3px" },
+    arrowIconWrapper: {
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "18px",
+        height: "18px",
+    },
+    expandedWrapper: {
+        overflow: "hidden",
+    },
+    expandedInner: {
+        paddingTop: "16px",
+    },
+    divider: {
+        width: "100%",
+        height: "1px",
+        marginBottom: "14px",
+    },
+    expandedText: {
+        color: "#111111",
+        fontSize: "14px",
+        lineHeight: "1.6",
+        margin: 0,
+        fontWeight: 500,
+    },
+    mobileHandleContainer: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: "24px",
+        paddingTop: "16px",
+        borderTop: "1px dashed rgba(17, 17, 17, 0.15)",
+        cursor: "grab",
+        touchAction: "none",
+        userSelect: "none",
+    },
+    mobileHandleBar: {
+        width: "52px",
+        height: "5px",
+        borderRadius: "999px",
+        backgroundColor: "rgba(17, 17, 17, 0.3)",
+        marginBottom: "8px",
+        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+    },
+    mobileHandleLabel: {
+        fontSize: "11px",
+        fontWeight: 700,
+        color: "rgba(17, 17, 17, 0.55)",
+        letterSpacing: "0.5px",
+        textTransform: "uppercase",
+    },
+}
